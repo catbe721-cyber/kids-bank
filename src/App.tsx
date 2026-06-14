@@ -135,7 +135,7 @@ export default function App() {
       )}
 
       {/* Main content */}
-      <main className="main-content" style={!isParent ? { paddingTop: '2rem' } : {}}>
+      <main className="main-content" style={!isParent ? { paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' } : {}}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
            <h1 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
              {activeChild === 'sister' ? '姐姐的帳戶 👧' : '弟弟的帳戶 👦'}
