@@ -13,8 +13,6 @@ dist/
 *.env
 *secrets*
 *secret*
-*PIN*
-*pin*
 
 # Firebase local
 .firebase/
