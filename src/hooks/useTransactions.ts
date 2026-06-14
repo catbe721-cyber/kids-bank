@@ -31,8 +31,7 @@ export function useTransactions(
 
     const q = query(
       collection(db, "kids_savings"),
-      where("child", "==", activeChild),
-      orderBy("timestamp", "asc")
+      where("child", "==", activeChild)
     );
 
     const unsubscribe = onSnapshot(
@@ -52,6 +51,10 @@ export function useTransactions(
             timestamp: ts,
           } as Transaction;
         });
+        
+        // Sort by timestamp ascending in memory to avoid needing a Firestore composite index
+        data.sort((a, b) => a.timestamp - b.timestamp);
+        
         setTransactions(data);
         setIsLoading(false);
         setError(null);

@@ -28,8 +28,7 @@ export function useSavingsGoals(
 
     const q = query(
       collection(db, "savings_goals"),
-      where("child", "==", activeChild),
-      orderBy("createdAt", "asc")
+      where("child", "==", activeChild)
     );
 
     const unsubscribe = onSnapshot(
@@ -50,6 +49,9 @@ export function useSavingsGoals(
             } as SavingsGoal;
           })
           .filter((g) => g.child === activeChild);
+          
+        data.sort((a, b) => a.createdAt - b.createdAt);
+        
         setGoals(data);
         setIsLoading(false);
       },
