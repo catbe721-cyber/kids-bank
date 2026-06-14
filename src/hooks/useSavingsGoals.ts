@@ -3,6 +3,7 @@ import {
   collection,
   onSnapshot,
   query,
+  where,
   orderBy,
   Timestamp,
 } from "firebase/firestore";
@@ -27,6 +28,7 @@ export function useSavingsGoals(
 
     const q = query(
       collection(db, "savings_goals"),
+      where("child", "==", activeChild),
       orderBy("createdAt", "asc")
     );
 

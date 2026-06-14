@@ -9,10 +9,11 @@ service cloud.firestore {
     }
 
     function isParent() {
-      return isAuthenticated()
-        && request.auth.token.role == 'parent'
-        // Compare Unix timestamp (seconds) against Firestore request.time (also seconds)
-        && request.auth.token.exp > request.time.toMillis() / 1000;
+      return isAuthenticated() && request.auth.token.email == 'parent@kidsbank.local';
+    }
+
+    function canReadChild(childName) {
+      return isParent() || (isAuthenticated() && request.auth.token.email == childName + '@kidsbank.local');
     }
 
     function isValidChild() {
@@ -50,10 +51,7 @@ service cloud.firestore {
 
     // ─── Kids savings transactions ───────────────────────────────────────────
     match /kids_savings/{txId} {
-      // Any authenticated user (including anonymous kids) can read
-      allow read: if isAuthenticated();
-
-      // Only verified parent session can write
+      allow read: if canReadChild(resource.data.child);
       allow create: if isParent() && isValidTransaction();
       allow update: if isParent() && isValidTransaction();
       allow delete: if isParent();
@@ -61,7 +59,7 @@ service cloud.firestore {
 
     // ─── Savings goals ───────────────────────────────────────────────────────
     match /savings_goals/{goalId} {
-      allow read: if isAuthenticated();
+      allow read: if canReadChild(resource.data.child);
       allow create: if isParent() && isValidGoal();
       allow update: if isParent() && isValidGoal();
       allow delete: if isParent();

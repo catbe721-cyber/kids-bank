@@ -1,6 +1,7 @@
 // ─── Domain Types ─────────────────────────────────────────────────────────────
 
 export type ChildId = "sister" | "brother";
+export type UserRole = "sister" | "brother" | "parent" | null;
 export type TransactionType = "deposit" | "withdraw";
 
 export interface Transaction {

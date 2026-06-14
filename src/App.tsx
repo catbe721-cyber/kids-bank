@@ -1,10 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TabBar } from "./components/layout/TabBar";
 import { FloatingButton } from "./components/layout/FloatingButton";
-import { ErrorBanner } from "./components/common/ErrorBanner";
 import { ConfirmDialog } from "./components/common/ConfirmDialog";
-import { PinKeypad } from "./components/auth/PinKeypad";
-import { ParentBadge } from "./components/auth/ParentBadge";
+import { LoginScreen } from "./components/auth/LoginScreen";
 import { BalanceCard } from "./components/dashboard/BalanceCard";
 import { StatsRow } from "./components/dashboard/StatsRow";
 import { SavingsGoalCard } from "./components/dashboard/SavingsGoalCard";
@@ -12,7 +10,7 @@ import { GoalModal } from "./components/dashboard/GoalModal";
 import { TransactionList } from "./components/transactions/TransactionList";
 import { TransactionModal } from "./components/transactions/TransactionModal";
 import { useAuth } from "./hooks/useAuth";
-import { useParentMode } from "./hooks/useParentMode";
+import { useLogin } from "./hooks/useLogin";
 import { useTransactions } from "./hooks/useTransactions";
 import { useSavingsGoals } from "./hooks/useSavingsGoals";
 import {
@@ -25,7 +23,6 @@ import type { ChildId, LedgerEntry, SavingsGoal, TransactionType } from "./types
 
 type ModalState =
   | { kind: "none" }
-  | { kind: "pin"; onSuccess: () => void }
   | { kind: "tx-add" }
   | { kind: "tx-edit"; item: LedgerEntry }
   | { kind: "tx-delete"; item: LedgerEntry }
@@ -36,33 +33,30 @@ export default function App() {
   const [activeChild, setActiveChild] = useState<ChildId>("sister");
   const [modal, setModal] = useState<ModalState>({ kind: "none" });
 
-  const { user, authError, isLoading: authLoading } = useAuth();
-  const parentMode = useParentMode(user);
+  const { user, role, isLoading: authLoading } = useAuth();
+  const { login, logout, isVerifying, pinError, clearPinError } = useLogin();
+  
   const { ledger, currentBalance, thisMonthInterest, totalDeposits, totalWithdrawals, isLoading: txLoading } =
     useTransactions(user, activeChild);
   const { goals } = useSavingsGoals(user, activeChild);
 
+  // Force active child if logged in as a child
+  useEffect(() => {
+    if (role === "sister") setActiveChild("sister");
+    if (role === "brother") setActiveChild("brother");
+  }, [role]);
+
   // ─── Guard: require parent mode ───────────────────────────────────────────
   const requireParent = useCallback(
     (action: () => void) => {
-      if (parentMode.isParent) {
+      if (role === "parent") {
         action();
       } else {
-        setModal({ kind: "pin", onSuccess: action });
+        alert("只有家長可以執行此操作。");
       }
     },
-    [parentMode.isParent]
+    [role]
   );
-
-  // ─── PIN handlers ──────────────────────────────────────────────────────────
-  const handlePinSubmit = async (pin: string) => {
-    const success = await parentMode.verifyPin(pin);
-    if (success && modal.kind === "pin") {
-      const onSuccess = modal.onSuccess;
-      setModal({ kind: "none" });
-      onSuccess();
-    }
-  };
 
   // ─── Transaction handlers ──────────────────────────────────────────────────
   const handleOpenAdd = () => requireParent(() => setModal({ kind: "tx-add" }));
@@ -112,21 +106,46 @@ export default function App() {
   };
 
   const closeModal = () => {
-    parentMode.clearPinError();
     setModal({ kind: "none" });
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
+  if (authLoading) {
+    return <div className="login-screen"><p>載入中...</p></div>;
+  }
+
+  if (!role) {
+    return (
+      <LoginScreen
+        onLogin={login}
+        isLoading={isVerifying}
+        error={pinError}
+        clearError={clearPinError}
+      />
+    );
+  }
+
+  const isParent = role === "parent";
+
   return (
     <>
-      {/* Auth error */}
-      {authError && <ErrorBanner message={authError} />}
-
-      {/* Tab navigation */}
-      <TabBar activeChild={activeChild} onChange={setActiveChild} />
+      {/* Tab navigation - Only show if parent */}
+      {isParent && (
+        <TabBar activeChild={activeChild} onChange={setActiveChild} />
+      )}
 
       {/* Main content */}
-      <main className="main-content">
+      <main className="main-content" style={!isParent ? { paddingTop: '2rem' } : {}}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+           <h1 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
+             {activeChild === 'sister' ? '姐姐的帳戶 👧' : '弟弟的帳戶 👦'}
+           </h1>
+           <button 
+             onClick={logout}
+             style={{ fontSize: '0.875rem', padding: '0.25rem 0.75rem', borderRadius: '1rem', background: 'var(--border)', color: 'var(--text)' }}
+           >登出</button>
+        </div>
+
         <BalanceCard
           activeChild={activeChild}
           currentBalance={currentBalance}
@@ -142,48 +161,30 @@ export default function App() {
         <SavingsGoalCard
           goals={goals}
           currentBalance={currentBalance}
-          isParent={parentMode.isParent}
+          isParent={isParent}
           onAddGoal={handleOpenAddGoal}
           onDeleteGoal={handleOpenDeleteGoal}
         />
 
         <TransactionList
           ledger={ledger}
-          isParent={parentMode.isParent}
-          isLoading={authLoading || txLoading}
+          isParent={isParent}
+          isLoading={txLoading}
           onEdit={handleOpenEdit}
           onDelete={handleOpenDelete}
         />
       </main>
 
       {/* Floating action button */}
-      <FloatingButton
-        activeChild={activeChild}
-        disabled={!!authError}
-        onClick={handleOpenAdd}
-      />
-
-      {/* Parent mode badge */}
-      {parentMode.isParent && (
-        <ParentBadge
-          secondsRemaining={parentMode.secondsRemaining}
-          onRevoke={parentMode.revokeAccess}
+      {isParent && (
+        <FloatingButton
+          activeChild={activeChild}
+          disabled={false}
+          onClick={handleOpenAdd}
         />
       )}
 
       {/* ─── Modals ─────────────────────────────────────────────────────────── */}
-
-      {/* PIN keypad */}
-      {modal.kind === "pin" && (
-        <PinKeypad
-          onSubmit={handlePinSubmit}
-          isLoading={parentMode.isVerifying}
-          error={parentMode.pinError}
-          onClose={closeModal}
-          clearError={parentMode.clearPinError}
-        />
-      )}
-
       {/* Add / Edit transaction */}
       {(modal.kind === "tx-add" || modal.kind === "tx-edit") && (
         <TransactionModal

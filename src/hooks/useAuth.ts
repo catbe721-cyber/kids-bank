@@ -1,39 +1,36 @@
 import { useState, useEffect } from "react";
-import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { auth } from "../config/firebase";
+import type { UserRole } from "../types";
 
 interface UseAuthReturn {
   user: User | null;
-  authError: string | null;
+  role: UserRole;
   isLoading: boolean;
 }
 
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Start anonymous auth
-    signInAnonymously(auth).catch((error: { code: string; message: string }) => {
-      console.error("Auth error:", error);
-      if (error.code === "auth/configuration-not-found") {
-        setAuthError(
-          "請在 Firebase 控制台啟用「匿名登入」方式。"
-        );
-      } else {
-        setAuthError(`登入失敗：${error.message}`);
-      }
-    });
-
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
+      if (u?.email) {
+        if (u.email.startsWith("parent@")) setRole("parent");
+        else if (u.email.startsWith("sister@")) setRole("sister");
+        else if (u.email.startsWith("brother@")) setRole("brother");
+        else setRole(null);
+      } else {
+        setRole(null);
+      }
       setIsLoading(false);
     });
 
     return unsubscribe;
   }, []);
 
-  return { user, authError, isLoading };
+  return { user, role, isLoading };
 }

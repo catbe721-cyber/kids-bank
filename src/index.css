@@ -1105,3 +1105,109 @@ a { color: inherit; text-decoration: none; }
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ─── Login Screen ─────────────────────────────────────────────────────────── */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  background: var(--bg);
+  animation: fadeIn 300ms ease both;
+}
+
+.login-screen.pin-mode {
+  justify-content: flex-start;
+  padding-top: 20vh;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.login-logo {
+  width: 5rem;
+  height: 5rem;
+  background: rgba(250, 204, 21, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  box-shadow: 0 0 40px rgba(250, 204, 21, 0.1);
+}
+
+.logo-emoji {
+  font-size: 2.5rem;
+}
+
+.app-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #fff, var(--gray-400));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.role-selection {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.role-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all var(--transition);
+  color: var(--text);
+  text-align: left;
+}
+
+.role-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gray-600);
+}
+
+.role-card:active {
+  transform: scale(0.98);
+}
+
+.role-sister:hover { border-color: rgba(236, 72, 153, 0.5); box-shadow: var(--shadow-glow-pink); }
+.role-brother:hover { border-color: rgba(6, 182, 212, 0.5); box-shadow: var(--shadow-glow-cyan); }
+.role-parent:hover { border-color: rgba(250, 204, 21, 0.5); box-shadow: 0 0 30px rgba(250, 204, 21, 0.2); }
+
+.role-emoji {
+  font-size: 2rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-sister .role-emoji { background: rgba(236, 72, 153, 0.1); }
+.role-brother .role-emoji { background: rgba(6, 182, 212, 0.1); }
+.role-parent .role-emoji { background: rgba(250, 204, 21, 0.1); }
+
+.role-card h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}

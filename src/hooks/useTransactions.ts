@@ -3,6 +3,7 @@ import {
   collection,
   onSnapshot,
   query,
+  where,
   orderBy,
   Timestamp,
 } from "firebase/firestore";
@@ -30,6 +31,7 @@ export function useTransactions(
 
     const q = query(
       collection(db, "kids_savings"),
+      where("child", "==", activeChild),
       orderBy("timestamp", "asc")
     );
 
