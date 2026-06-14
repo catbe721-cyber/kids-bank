@@ -66,7 +66,7 @@ export function useTransactions(
     );
 
     return unsubscribe;
-  }, [user]);
+  }, [user, activeChild]);
 
   const ledgerResult = useMemo(
     () => computeLedger(transactions, activeChild),
