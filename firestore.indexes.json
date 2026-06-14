@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "kids_savings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "child", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "savings_goals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "child", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper functions ────────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isParent() {
+      return isAuthenticated()
+        && request.auth.token.role == 'parent'
+        // Compare Unix timestamp (seconds) against Firestore request.time (also seconds)
+        && request.auth.token.exp > request.time.toMillis() / 1000;
+    }
+
+    function isValidChild() {
+      return request.resource.data.child in ['sister', 'brother'];
+    }
+
+    function isValidTransactionType() {
+      return request.resource.data.type in ['deposit', 'withdraw'];
+    }
+
+    function isValidTransaction() {
+      return request.resource.data.keys().hasAll(['child', 'type', 'amount', 'date', 'timestamp'])
+        && isValidChild()
+        && isValidTransactionType()
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.amount < 1000000  // sanity cap
+        && request.resource.data.date is string
+        && request.resource.data.date.size() == 10; // YYYY-MM-DD
+    }
+
+    function isValidGoal() {
+      return request.resource.data.keys().hasAll(['child', 'name', 'targetAmount', 'emoji', 'createdAt'])
+        && request.resource.data.child in ['sister', 'brother']
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.targetAmount is number
+        && request.resource.data.targetAmount > 0;
+    }
+
+    // ─── Rate limits — admin SDK only, never accessible to clients ──────────
+    match /rate_limits/{doc} {
+      allow read, write: if false;
+    }
+
+    // ─── Kids savings transactions ───────────────────────────────────────────
+    match /kids_savings/{txId} {
+      // Any authenticated user (including anonymous kids) can read
+      allow read: if isAuthenticated();
+
+      // Only verified parent session can write
+      allow create: if isParent() && isValidTransaction();
+      allow update: if isParent() && isValidTransaction();
+      allow delete: if isParent();
+    }
+
+    // ─── Savings goals ───────────────────────────────────────────────────────
+    match /savings_goals/{goalId} {
+      allow read: if isAuthenticated();
+      allow create: if isParent() && isValidGoal();
+      allow update: if isParent() && isValidGoal();
+      allow delete: if isParent();
+    }
+  }
+}
